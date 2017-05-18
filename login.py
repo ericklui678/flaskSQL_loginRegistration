@@ -66,6 +66,14 @@ def register():
 
     # if all fields have correct input
     if count == 5:
+        # SELECT EXISTS returns boolean whether email already exists in db
+        query = "SELECT EXISTS (SELECT * FROM users WHERE email = '" + email + "')"
+        output = mysql.query_db(query)
+        for dict in output:
+            for key in dict:
+                if dict[key] == 1:   # if email exists in database
+                    flash('Email already exists in database')
+                    return redirect('/')
         # create random salt value
         salt = binascii.b2a_hex(os.urandom(15))
         # hash password with salt
@@ -78,6 +86,11 @@ def register():
         mysql.query_db(query, data)
         flash('You have now been registered!')
 
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form['email']
+    password = request.form['password']
+    print email, password
 
     return redirect('/')
 
