@@ -22,6 +22,7 @@ def register():
     confirm = request.form['confirm']
     # count correct fields
     count = 0
+
     # Validate first_name
     if len(first_name) <= 2:
         flash('First name must be at least 2 letters')
@@ -63,15 +64,24 @@ def register():
         print 'SUCCESS CONFIRM'
         count += 1
 
-    print count
+    # if all fields have correct input
+    if count == 5:
+        # create random salt value
+        salt = binascii.b2a_hex(os.urandom(15))
+        # hash password with salt
+        hashed_pw = md5.new(password + salt).hexdigest()
+        # query to insert
+        query = "INSERT INTO users(first_name, last_name, email, salt, password, created_at, updated_at) VALUES (:first_name, :last_name, :email, :salt, :password, NOW(), NOW())"
+        # data will consists of whatever the user typed in
+        data = {'first_name': first_name, 'last_name': last_name, 'email': email, 'salt': salt, 'password': hashed_pw}
+        # run the query with data
+        mysql.query_db(query, data)
+        flash('You have now been registered!')
+
+
     return redirect('/')
 
 app.run(debug = True)
 
-    # if len(request.form['email']) < 1:
-    #     flash("Email cannot be blank!")
-    # elif not EMAIL_REGEX.match(request.form['email']):
-    #     flash('Invalid Email Address')
-    # # else if email doesn't match REGEX, display 'invalid email'
-    # else:
-    #     flash('Success')
+#  INSERT INTO users(first_name, last_name, email, salt, password, created_at, updated_at)
+#  VALUES ('victor', 'lui', 'victor.lui@gmail.com', '54321', 'passwordtest', NOW(), NOW())
