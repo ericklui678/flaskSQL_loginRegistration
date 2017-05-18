@@ -78,7 +78,7 @@ def register():
         salt = binascii.b2a_hex(os.urandom(15))
         # hash password with salt
         hashed_pw = md5.new(password + salt).hexdigest()
-        # query to insert
+        # query for inserting data
         query = "INSERT INTO users(first_name, last_name, email, salt, password, created_at, updated_at) VALUES (:first_name, :last_name, :email, :salt, :password, NOW(), NOW())"
         # data will consists of whatever the user typed in
         data = {'first_name': first_name, 'last_name': last_name, 'email': email, 'salt': salt, 'password': hashed_pw}
@@ -86,15 +86,34 @@ def register():
         mysql.query_db(query, data)
         flash('You have now been registered!')
 
+    return redirect('/')
+
 @app.route('/login', methods=['POST'])
 def login():
     email = request.form['email']
     password = request.form['password']
-    print email, password
+    # query to return email if found on db
+    query = "SELECT * FROM users WHERE email = :email LIMIT 1"
+    data = {'email': email}
+    output = mysql.query_db(query, data)
+    print output
+    # if the email is found
+    if len(output) != 0:
+        encrypted_password = md5.new(password + output[0]['salt']).hexdigest()
+        # if the hashed passwords match
+        if output[0]['password'] == encrypted_password:
+            session['userID'] = output[0]['id']
+            print session['userID']
+            return redirect('/success')
+        else:
+            flash('PASSWORD INCORRECT')
+    else:
+        flash('EMAIL DOES NOT EXIST IN DB')
 
     return redirect('/')
 
-app.run(debug = True)
+@app.route('/success')
+def success():
+    return render_template('success.html')
 
-#  INSERT INTO users(first_name, last_name, email, salt, password, created_at, updated_at)
-#  VALUES ('victor', 'lui', 'victor.lui@gmail.com', '54321', 'passwordtest', NOW(), NOW())
+app.run(debug = True)
